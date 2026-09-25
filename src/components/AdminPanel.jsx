@@ -130,7 +130,7 @@ export default function AdminPanel({ onIrARegistro }) {
       "Correo",
       "Fecha Nacimiento",
       "Estado",
-      "URL Documento",
+      "Nombre Archivo",
     ];
 
     const filas = usuariosFiltrados.map((u) => [
@@ -142,7 +142,7 @@ export default function AdminPanel({ onIrARegistro }) {
       `"${u.correo || ""}"`,
       `"${u.fechaNacimiento || ""}"`,
       `"${u.estado || "activo"}"`,
-      `"${u.urlDocumento || ""}"`,
+      `"${u.nombreArchivo || ""}"`,
     ]);
 
     const csvContent =
@@ -210,7 +210,7 @@ export default function AdminPanel({ onIrARegistro }) {
         </div>
         <div className="stat-card">
           <div className="stat-value stat-value-info">
-            {usuarios.filter((u) => u.urlDocumento).length}
+            {usuarios.filter((u) => u.documentoBase64).length}
           </div>
           <div className="stat-label">Documentos Adjuntos</div>
         </div>
@@ -351,9 +351,10 @@ export default function AdminPanel({ onIrARegistro }) {
                       </td>
                       <td>{u.fechaNacimiento || "No registrada"}</td>
                       <td>
-                        {u.urlDocumento ? (
+                        {u.documentoBase64 ? (
                           <a
-                            href={u.urlDocumento}
+                            href={u.documentoBase64}
+                            download={u.nombreArchivo || "documento"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-view-doc"
@@ -370,8 +371,8 @@ export default function AdminPanel({ onIrARegistro }) {
                           {estadoActual === "activo"
                             ? "Activo"
                             : estadoActual === "en_revision"
-                            ? "En Revisión"
-                            : "Inactivo"}
+                              ? "En Revisión"
+                              : "Inactivo"}
                         </span>
                       </td>
                       <td className="td-actions">

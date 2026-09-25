@@ -5,13 +5,13 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db, isApiKeyPlaceholder } from "../firebase/config";
+import SuccessModal from "./SuccessModal";
 
 // ======================================================
 // CONVERTIR Y COMPRIMIR ARCHIVO A BASE64
 // ======================================================
 const convertirArchivoABase64 = (file) => {
   return new Promise((resolve, reject) => {
-    // Si es una imagen, intentamos optimizarla para no superar el límite de 1MB de Firestore
     if (file.type.startsWith("image/")) {
       const img = new Image();
       const reader = new FileReader();
@@ -22,11 +22,12 @@ const convertirArchivoABase64 = (file) => {
 
       img.onload = () => {
         const canvas = document.createElement("canvas");
+
         let width = img.width;
         let height = img.height;
 
-        // Escalar manteniendo proporción si es muy grande
         const maxDimension = 1200;
+
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
             height = Math.round((height * maxDimension) / width);
@@ -43,18 +44,21 @@ const convertirArchivoABase64 = (file) => {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convertir a JPEG comprimido
         const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
         resolve(dataUrl);
       };
 
       img.onerror = (error) => reject(error);
+
       reader.readAsDataURL(file);
     } else {
-      // Para PDF u otros formatos se lee directamente
       const lector = new FileReader();
+
       lector.readAsDataURL(file);
+
       lector.onload = () => resolve(lector.result);
+
       lector.onerror = (error) => reject(error);
     }
   });
@@ -75,6 +79,7 @@ export default function RegistroForm({ onIrALogin }) {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [mostrarExito, setMostrarExito] = useState(false);
 
   // ======================================================
   // VALIDACIONES
@@ -92,12 +97,18 @@ export default function RegistroForm({ onIrALogin }) {
     const hoy = new Date();
     const nacimiento = new Date(fecha);
 
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const mes = hoy.getMonth() - nacimiento.getMonth();
+    let edad =
+      hoy.getFullYear() -
+      nacimiento.getFullYear();
+
+    const mes =
+      hoy.getMonth() -
+      nacimiento.getMonth();
 
     if (
       mes < 0 ||
-      (mes === 0 && hoy.getDate() < nacimiento.getDate())
+      (mes === 0 &&
+        hoy.getDate() < nacimiento.getDate())
     ) {
       edad--;
     }
@@ -123,7 +134,10 @@ export default function RegistroForm({ onIrALogin }) {
       return "Para cédula de ciudadanía debes tener 18 años o más.";
     }
 
-    if (tipoDocumento === "TI" && (edad < 7 || edad >= 18)) {
+    if (
+      tipoDocumento === "TI" &&
+      (edad < 7 || edad >= 18)
+    ) {
       return "Para tarjeta de identidad debes tener entre 7 y 17 años.";
     }
 
@@ -131,7 +145,7 @@ export default function RegistroForm({ onIrALogin }) {
   };
 
   // ======================================================
-  // VALIDAR ARCHIVO (LÍMITE RESTABLECIDO A 5 MB)
+  // VALIDAR ARCHIVO
   // ======================================================
 
   const validarArchivo = (file) => {
@@ -150,7 +164,6 @@ export default function RegistroForm({ onIrALogin }) {
       return "El archivo debe ser en formato PDF, JPG o PNG.";
     }
 
-    // Regla original de 5 MB
     const maximoBytes = 5 * 1024 * 1024;
 
     if (file.size > maximoBytes) {
@@ -203,7 +216,9 @@ export default function RegistroForm({ onIrALogin }) {
     setArchivo(null);
     setAceptaTerminos(false);
 
-    const inputArchivo = document.getElementById("archivo");
+    const inputArchivo =
+      document.getElementById("archivo");
+
     if (inputArchivo) {
       inputArchivo.value = "";
     }
@@ -219,146 +234,289 @@ export default function RegistroForm({ onIrALogin }) {
     setError("");
     setMensaje("");
 
-    if (!nombre.trim() || !validarNombre(nombre.trim())) {
-      setError("Ingresa un nombre válido (solo letras).");
+    // ----------------------------------------------------
+    // VALIDACIONES
+    // ----------------------------------------------------
+
+    if (
+      !nombre.trim() ||
+      !validarNombre(nombre.trim())
+    ) {
+      setError(
+        "Ingresa un nombre válido (solo letras)."
+      );
       return;
     }
 
-    if (!apellido.trim() || !validarNombre(apellido.trim())) {
-      setError("Ingresa un apellido válido (solo letras).");
+    if (
+      !apellido.trim() ||
+      !validarNombre(apellido.trim())
+    ) {
+      setError(
+        "Ingresa un apellido válido (solo letras)."
+      );
       return;
     }
 
     if (!tipoDocumento) {
-      setError("Debes seleccionar el tipo de documento.");
+      setError(
+        "Debes seleccionar el tipo de documento."
+      );
       return;
     }
 
     if (!numeroIdentificacion.trim()) {
-      setError("El número de identificación es obligatorio.");
+      setError(
+        "El número de identificación es obligatorio."
+      );
       return;
     }
 
-    if (tipoDocumento === "CC" || tipoDocumento === "TI") {
-      if (!/^\d+$/.test(numeroIdentificacion.trim())) {
-        setError("El número de identificación debe contener únicamente dígitos.");
+    if (
+      tipoDocumento === "CC" ||
+      tipoDocumento === "TI"
+    ) {
+      if (
+        !/^\d+$/.test(
+          numeroIdentificacion.trim()
+        )
+      ) {
+        setError(
+          "El número de identificación debe contener únicamente dígitos."
+        );
         return;
       }
     }
 
-    const errorFecha = validarFechaDocumento();
+    const errorFecha =
+      validarFechaDocumento();
+
     if (errorFecha) {
       setError(errorFecha);
       return;
     }
 
-    if (!correo.trim() || !validarCorreo(correo.trim())) {
-      setError("Ingresa un correo electrónico válido.");
+    if (
+      !correo.trim() ||
+      !validarCorreo(correo.trim())
+    ) {
+      setError(
+        "Ingresa un correo electrónico válido."
+      );
       return;
     }
 
     if (!password || password.length < 6) {
-      setError("La contraseña debe tener mínimo 6 caracteres.");
+      setError(
+        "La contraseña debe tener mínimo 6 caracteres."
+      );
       return;
     }
 
     if (!confirmarPassword) {
-      setError("Debes confirmar tu contraseña.");
+      setError(
+        "Debes confirmar tu contraseña."
+      );
       return;
     }
 
     if (password !== confirmarPassword) {
-      setError("Las contraseñas no coinciden.");
+      setError(
+        "Las contraseñas no coinciden."
+      );
       return;
     }
 
-    const errorArchivo = validarArchivo(archivo);
+    const errorArchivo =
+      validarArchivo(archivo);
+
     if (errorArchivo) {
       setError(errorArchivo);
       return;
     }
 
     if (!aceptaTerminos) {
-      setError("Debes aceptar los términos y condiciones para continuar.");
+      setError(
+        "Debes aceptar los términos y condiciones para continuar."
+      );
       return;
     }
 
     if (isApiKeyPlaceholder) {
-      setError("Configuración de Firebase pendiente en .env.local.");
+      setError(
+        "Configuración de Firebase pendiente."
+      );
       return;
     }
 
+    // ----------------------------------------------------
+    // INICIAR REGISTRO
+    // ----------------------------------------------------
+
     setCargando(true);
+
     let usuarioCreado = null;
 
     try {
-      // 1. Crear usuario en Firebase Auth
-      const resultado = await createUserWithEmailAndPassword(
-        auth,
-        correo.trim(),
-        password
-      );
+      // 1. Crear usuario en Firebase Authentication
+      const resultado =
+        await createUserWithEmailAndPassword(
+          auth,
+          correo.trim(),
+          password
+        );
 
       usuarioCreado = resultado.user;
 
-      // 2. Enviar email de verificación
+      // 2. Enviar correo de verificación
       try {
-        await sendEmailVerification(usuarioCreado);
+        await sendEmailVerification(
+          usuarioCreado
+        );
       } catch (emailErr) {
-        console.warn("No se pudo enviar email de verificación:", emailErr);
-      }
-
-      // 3. Convertir a Base64
-      const documentoBase64 = await convertirArchivoABase64(archivo);
-
-      // Verificar que el string final quepa en el límite de 1MB de Firestore
-      if (documentoBase64.length > 1048576) {
-        throw new Error(
-          "El archivo convertido supera el límite de peso permitido por la base de datos (1 MB máximo por registro)."
+        console.warn(
+          "No se pudo enviar email de verificación:",
+          emailErr
         );
       }
 
-      // 4. Guardar datos en Firestore
-      await setDoc(doc(db, "usuarios", usuarioCreado.uid), {
-        uid: usuarioCreado.uid,
-        nombre: nombre.trim(),
-        apellido: apellido.trim(),
-        tipoDocumento,
-        numeroIdentificacion: numeroIdentificacion.trim(),
-        fechaNacimiento,
-        correo: correo.trim().toLowerCase(),
-        nombreArchivo: archivo.name,
-        tipoArchivo: archivo.type,
-        tamanoArchivo: archivo.size,
-        documentoBase64,
-        fechaRegistro: serverTimestamp(),
-        estado: "activo",
-        correoVerificado: false,
-      });
+      // 3. Convertir documento
+      const documentoBase64 =
+        await convertirArchivoABase64(
+          archivo
+        );
 
-      setMensaje("¡Registro completado con éxito! Se ha enviado un correo de confirmación.");
+      // 4. Verificar tamaño para Firestore
+      if (documentoBase64.length > 1048576) {
+        throw new Error(
+          "El archivo convertido supera el límite de 1 MB permitido por Firestore."
+        );
+      }
+
+      // 5. Guardar usuario
+      await setDoc(
+        doc(
+          db,
+          "usuarios",
+          usuarioCreado.uid
+        ),
+        {
+          uid: usuarioCreado.uid,
+
+          nombre: nombre.trim(),
+
+          apellido: apellido.trim(),
+
+          tipoDocumento,
+
+          numeroIdentificacion:
+            numeroIdentificacion.trim(),
+
+          fechaNacimiento,
+
+          correo:
+            correo.trim().toLowerCase(),
+
+          nombreArchivo: archivo.name,
+
+          tipoArchivo: archivo.type,
+
+          tamanoArchivo: archivo.size,
+
+          documentoBase64,
+
+          fechaRegistro:
+            serverTimestamp(),
+
+          estado: "activo",
+
+          correoVerificado: false,
+
+          rol: "usuario",
+        }
+      );
+
+      // 6. Crear perfil con rol usuario
+      await setDoc(
+        doc(
+          db,
+          "perfiles",
+          usuarioCreado.uid
+        ),
+        {
+          uid: usuarioCreado.uid,
+
+          correo:
+            correo.trim().toLowerCase(),
+
+          rol: "usuario",
+
+          fechaCreacion:
+            serverTimestamp(),
+        }
+      );
+
+      // --------------------------------------------------
+      // REGISTRO COMPLETADO
+      // --------------------------------------------------
+
+      setMensaje(
+        "¡Registro exitoso! Tu información y documentación fueron registrados correctamente."
+      );
+
       limpiarFormulario();
-    } catch (err) {
-      console.error("Error durante el registro:", err);
 
+      setMostrarExito(true);
+
+    } catch (err) {
+      console.error(
+        "Error durante el registro:",
+        err
+      );
+
+      // Intentar eliminar usuario creado
       if (usuarioCreado) {
         try {
           await usuarioCreado.delete();
-        } catch (delErr) {
-          console.error("Error en rollback de usuario:", delErr);
+        } catch (deleteError) {
+          console.error(
+            "Error eliminando usuario:",
+            deleteError
+          );
         }
       }
 
       const code = err.code || "";
-      const rawMessage = err.message || "";
+      const rawMessage =
+        err.message || "";
 
-      if (code === "auth/email-already-in-use") {
-        setError("Este correo electrónico ya está registrado.");
-      } else if (code === "permission-denied") {
-        setError("Permiso denegado en Cloud Firestore. Revisa las reglas de seguridad.");
+      if (
+        code ===
+        "auth/email-already-in-use"
+      ) {
+        setError(
+          "Este correo electrónico ya está registrado."
+        );
+      } else if (
+        code ===
+        "permission-denied" ||
+        code ===
+        "firestore/permission-denied"
+      ) {
+        setError(
+          "Permiso denegado en Firebase. Revisa las reglas de Firestore."
+        );
       } else {
-        setError(rawMessage ? `Error: ${rawMessage.replace(/^Firebase:\s*/i, "")}` : "Ocurrió un error inesperado.");
+        setError(
+          rawMessage
+            ? `Error: ${rawMessage.replace(
+              /^Firebase:\s*/i,
+              ""
+            )}`
+            : "Ocurrió un error inesperado."
+        );
       }
+
     } finally {
       setCargando(false);
     }
@@ -366,188 +524,386 @@ export default function RegistroForm({ onIrALogin }) {
 
   return (
     <main className="page-main">
+
       <section className="page-intro">
-        <p className="page-kicker">FORMULARIO DE REGISTRO INSTITUCIONAL</p>
-        <h1 className="page-title">Crea tu Cuenta de Usuario</h1>
-        <p className="page-description">
-          Diligencia la siguiente información para solicitar tu registro en el sistema del Instituto de Evaluación Tecnológica en Salud (IETS).
+
+        <p className="page-kicker">
+          FORMULARIO DE REGISTRO INSTITUCIONAL
         </p>
+
+        <h1 className="page-title">
+          Crea tu Cuenta de Usuario
+        </h1>
+
+        <p className="page-description">
+          Diligencia la siguiente información
+          para solicitar tu registro en el sistema
+          del Instituto de Evaluación Tecnológica
+          en Salud (IETS).
+        </p>
+
       </section>
 
-      <form className="form-card" onSubmit={handleSubmit}>
-        {/* SECCIÓN 01: DATOS PERSONALES */}
+      <form
+        className="form-card"
+        onSubmit={handleSubmit}
+      >
+
+        {/* ==================================================
+            SECCIÓN 01
+        ================================================== */}
+
         <section className="form-section">
+
           <div className="section-heading">
-            <span className="section-number">01</span>
+
+            <span className="section-number">
+              01
+            </span>
+
             <div>
-              <h2 className="section-title">Datos Personales</h2>
-              <p className="section-desc">Información básica de identificación del solicitante.</p>
+              <h2 className="section-title">
+                Datos Personales
+              </h2>
+
+              <p className="section-desc">
+                Información básica de identificación
+                del solicitante.
+              </p>
             </div>
+
           </div>
 
           <div className="form-grid">
+
             <div className="form-group">
-              <label className="form-label" htmlFor="nombre">
-                Nombre <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="nombre"
+              >
+                Nombre{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="nombre"
                 type="text"
                 className="form-input"
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) =>
+                  setNombre(e.target.value)
+                }
                 placeholder="Ingresa tus nombres"
                 autoComplete="given-name"
               />
+
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="apellido">
-                Apellido <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="apellido"
+              >
+                Apellido{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="apellido"
                 type="text"
                 className="form-input"
                 value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={(e) =>
+                  setApellido(e.target.value)
+                }
                 placeholder="Ingresa tus apellidos"
                 autoComplete="family-name"
               />
+
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="tipoDocumento">
-                Tipo de Documento <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="tipoDocumento"
+              >
+                Tipo de Documento{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <select
                 id="tipoDocumento"
                 className="form-select"
                 value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value)}
+                onChange={(e) =>
+                  setTipoDocumento(
+                    e.target.value
+                  )
+                }
               >
-                <option value="">Selecciona una opción</option>
-                <option value="CC">Cédula de Ciudadanía (CC)</option>
-                <option value="TI">Tarjeta de Identidad (TI)</option>
-                <option value="CE">Cédula de Extranjería (CE)</option>
-                <option value="PAS">Pasaporte (PAS)</option>
+                <option value="">
+                  Selecciona una opción
+                </option>
+
+                <option value="CC">
+                  Cédula de Ciudadanía (CC)
+                </option>
+
+                <option value="TI">
+                  Tarjeta de Identidad (TI)
+                </option>
+
+                <option value="CE">
+                  Cédula de Extranjería (CE)
+                </option>
+
+                <option value="PAS">
+                  Pasaporte (PAS)
+                </option>
               </select>
+
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="numeroIdentificacion">
-                Número de Identificación <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="numeroIdentificacion"
+              >
+                Número de Identificación{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="numeroIdentificacion"
                 type="text"
                 className="form-input"
                 value={numeroIdentificacion}
-                onChange={(e) => setNumeroIdentificacion(e.target.value)}
+                onChange={(e) =>
+                  setNumeroIdentificacion(
+                    e.target.value
+                  )
+                }
                 placeholder="Ej. 1020304050"
                 autoComplete="off"
               />
+
             </div>
 
             <div className="form-group form-group-full">
-              <label className="form-label" htmlFor="fechaNacimiento">
-                Fecha de Nacimiento <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="fechaNacimiento"
+              >
+                Fecha de Nacimiento{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="fechaNacimiento"
                 type="date"
                 className="form-input"
                 value={fechaNacimiento}
-                onChange={(e) => setFechaNacimiento(e.target.value)}
+                onChange={(e) =>
+                  setFechaNacimiento(
+                    e.target.value
+                  )
+                }
                 autoComplete="bday"
               />
+
               <small className="field-help">
-                La fecha debe coincidir con la de tu documento de identidad (mayores de 18 años para CC).
+                La fecha debe coincidir con la de
+                tu documento de identidad.
               </small>
+
             </div>
+
           </div>
+
         </section>
 
-        {/* SECCIÓN 02: DATOS DE ACCESO */}
+        {/* ==================================================
+            SECCIÓN 02
+        ================================================== */}
+
         <section className="form-section">
+
           <div className="section-heading">
-            <span className="section-number">02</span>
+
+            <span className="section-number">
+              02
+            </span>
+
             <div>
-              <h2 className="section-title">Datos de Acceso</h2>
-              <p className="section-desc">Credenciales que utilizarás para identificarte en el sistema.</p>
+              <h2 className="section-title">
+                Datos de Acceso
+              </h2>
+
+              <p className="section-desc">
+                Credenciales que utilizarás para
+                identificarte en el sistema.
+              </p>
             </div>
+
           </div>
 
           <div className="form-grid">
+
             <div className="form-group form-group-full">
-              <label className="form-label" htmlFor="correo">
-                Correo Electrónico <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="correo"
+              >
+                Correo Electrónico{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="correo"
                 type="email"
                 className="form-input"
                 value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
+                onChange={(e) =>
+                  setCorreo(e.target.value)
+                }
                 placeholder="ejemplo@correo.com"
                 autoComplete="email"
               />
+
               <small className="field-help">
-                A este correo enviaremos el enlace de confirmación y las notificaciones del IETS.
+                A este correo enviaremos el enlace
+                de confirmación.
               </small>
+
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="password">
-                Contraseña <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="password"
+              >
+                Contraseña{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="password"
                 type="password"
                 className="form-input"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 placeholder="Mínimo 6 caracteres"
                 autoComplete="new-password"
               />
+
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="confirmarPassword">
-                Confirmar Contraseña <span className="required">*</span>
+
+              <label
+                className="form-label"
+                htmlFor="confirmarPassword"
+              >
+                Confirmar Contraseña{" "}
+                <span className="required">
+                  *
+                </span>
               </label>
+
               <input
                 id="confirmarPassword"
                 type="password"
                 className="form-input"
                 value={confirmarPassword}
-                onChange={(e) => setConfirmarPassword(e.target.value)}
+                onChange={(e) =>
+                  setConfirmarPassword(
+                    e.target.value
+                  )
+                }
                 placeholder="Repite tu contraseña"
                 autoComplete="new-password"
               />
+
             </div>
+
           </div>
+
         </section>
 
-        {/* SECCIÓN 03: DOCUMENTO */}
+        {/* ==================================================
+            SECCIÓN 03
+        ================================================== */}
+
         <section className="form-section">
+
           <div className="section-heading">
-            <span className="section-number">03</span>
+
+            <span className="section-number">
+              03
+            </span>
+
             <div>
-              <h2 className="section-title">Documento de Identificación</h2>
-              <p className="section-desc">Adjunta una copia digitalizada y legible de tu documento.</p>
+              <h2 className="section-title">
+                Documento de Identificación
+              </h2>
+
+              <p className="section-desc">
+                Adjunta una copia digitalizada y
+                legible de tu documento.
+              </p>
             </div>
+
           </div>
 
           <div className="file-box">
+
             <div className="file-row">
+
               <div className="file-meta">
-                <label className="form-label" htmlFor="archivo">
-                  Documento <span className="required">*</span>
+
+                <label
+                  className="form-label"
+                  htmlFor="archivo"
+                >
+                  Documento{" "}
+                  <span className="required">
+                    *
+                  </span>
                 </label>
+
                 <p className="file-help">
-                  Formatos permitidos: <strong>PDF, JPG, PNG</strong>. Tamaño máximo: <strong>5 MB</strong>.
+                  Formatos permitidos:
+                  <strong>
+                    {" "}
+                    PDF, JPG, PNG
+                  </strong>
+                  . Tamaño máximo:
+                  <strong> 5 MB</strong>.
                 </p>
+
               </div>
 
               <input
@@ -557,47 +913,115 @@ export default function RegistroForm({ onIrALogin }) {
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 onChange={handleArchivo}
               />
+
             </div>
 
             {archivo && (
               <div className="file-selected-badge">
+
                 <span className="file-name">
-                  Archivo seleccionado: <strong>{archivo.name}</strong> ({(archivo.size / (1024 * 1024)).toFixed(2)} MB)
+                  Archivo seleccionado:{" "}
+                  <strong>
+                    {archivo.name}
+                  </strong>{" "}
+                  (
+                  {(
+                    archivo.size /
+                    (1024 * 1024)
+                  ).toFixed(2)}{" "}
+                  MB)
                 </span>
+
               </div>
             )}
+
           </div>
+
         </section>
 
-        {/* TÉRMINOS Y CONDICIONES */}
+        {/* ==================================================
+            TÉRMINOS
+        ================================================== */}
+
         <div className="form-group checkbox-group">
+
           <label className="checkbox-label">
+
             <input
               type="checkbox"
               checked={aceptaTerminos}
-              onChange={(e) => setAceptaTerminos(e.target.checked)}
+              onChange={(e) =>
+                setAceptaTerminos(
+                  e.target.checked
+                )
+              }
             />
-            Acepto los términos y condiciones del sistema para continuar.
+
+            Acepto los términos y condiciones del
+            sistema para continuar.
+
           </label>
+
         </div>
 
-        {/* ALERTAS */}
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && <div className="alert alert-success">{mensaje}</div>}
+        {/* ==================================================
+            MENSAJES
+        ================================================== */}
 
-        {/* BOTONES DE ACCIÓN */}
+        {error && (
+          <div className="message message-error">
+            {error}
+          </div>
+        )}
+
+        {mensaje && (
+          <div className="message message-success">
+            {mensaje}
+          </div>
+        )}
+
+        {/* ==================================================
+            BOTONES
+        ================================================== */}
+
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={cargando}>
-            {cargando ? "Procesando registro..." : "Registrarme"}
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={cargando}
+          >
+            {cargando
+              ? "Procesando registro..."
+              : "Registrarme"}
           </button>
 
           {onIrALogin && (
-            <button type="button" className="btn btn-secondary" onClick={onIrALogin}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onIrALogin}
+            >
               ¿Ya tienes cuenta? Inicia sesión
             </button>
           )}
+
         </div>
+
       </form>
+
+      {/* ==================================================
+          MODAL REGISTRO EXITOSO
+      ================================================== */}
+
+      <SuccessModal
+        isOpen={mostrarExito}
+        onClose={() =>
+          setMostrarExito(false)
+        }
+        message="¡Registro exitoso! Tu información y documentación fueron registrados correctamente. Se ha enviado un correo de confirmación a tu bandeja de entrada."
+      />
+
     </main>
   );
 }
