@@ -14,7 +14,8 @@ Aplicativo web institucional del Instituto de Evaluación Tecnológica en Salud 
 
 
 ## 🌐 URL del aplicativo
-> *(Opcional / si aplica)*
+
+[https://registros-usuarisos.netlify.app/](https://registros-usuarisos.netlify.app/)
 
 ## 📱 Responsive design
 
@@ -137,7 +138,8 @@ registro-usuarios/
 │   │   ├── RegistroForm.jsx     # Formulario público de registro
 │   │   └── SuccessModal.jsx     # Popup de registro exitoso
 │   ├── firebase/
-│   │   └── config.js            # Inicialización de Firebase (Auth + Firestore)
+│   │   ├── config.js            # Inicialización de Firebase (Auth + Firestore)
+│   │   └── config.test.js       # Pruebas unitarias de configuración y seguridad
 │   ├── App.jsx                  # Enrutamiento entre vistas + control de sesión/rol
 │   ├── App.css                  # Estilos institucionales IETS
 │   ├── index.css
