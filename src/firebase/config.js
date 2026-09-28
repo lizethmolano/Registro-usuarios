@@ -5,13 +5,13 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAE5gtT5m893XAMe5Uac_PVHGppiE3ABXM",
-  authDomain: "registro-usuarios-7b67a.firebaseapp.com",
-  projectId: "registro-usuarios-7b67a",
-  storageBucket: "registro-usuarios-7b67a.firebasestorage.app",
-  messagingSenderId: "308018004150",
-  appId: "1:308018004150:web:e4b0e15dbdc6e9abf56617",
-  measurementId: "G-7GJX2XVV8C",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -30,7 +30,16 @@ if (typeof window !== "undefined") {
   });
 }
 
-const isApiKeyPlaceholder = false;
+export const checkIsApiKeyPlaceholder = (apiKey) => {
+  if (!apiKey || typeof apiKey !== "string") return true;
+  return (
+    apiKey.trim() === "" ||
+    apiKey === "tu_api_key_de_firebase_aqui" ||
+    apiKey.includes("PEGA_AQUI")
+  );
+};
+
+const isApiKeyPlaceholder = checkIsApiKeyPlaceholder(firebaseConfig.apiKey);
 
 export {
   app,
