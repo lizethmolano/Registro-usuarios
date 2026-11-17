@@ -1,0 +1,14 @@
+{
+  "campos": [],
+  "botones": [
+    {
+      "tipo": "button",
+      "texto": "Continuar con Google",
+      "id": null,
+      "clase": "w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md",
+      "selector": "button:has-text(\"Continuar con Google\")"
+    }
+  ],
+  "url": "https://repositorio.iets.org.co/login",
+  "titulo": "client"
+}

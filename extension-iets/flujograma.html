@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flujograma – Autollenado Repositorio IETS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #070d1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .header .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .header h1 {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: #64748b;
+      font-size: 13px;
+    }
+    .header p code {
+      background: #1e293b;
+      color: #38bdf8;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    /* ── Flowchart container ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Connector arrow ── */
+    .arrow {
+      width: 2px;
+      height: 28px;
+      background: linear-gradient(to bottom, #334155, #475569);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .arrow::after {
+      content: '';
+      position: absolute;
+      bottom: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 8px solid #475569;
+    }
+    .arrow.short { height: 18px; }
+
+    /* ── Generic node ── */
+    .node {
+      width: 100%;
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: default;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+      animation: fadeIn .4s ease both;
+    }
+    .node:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── START / END ── */
+    .node-terminal {
+      background: linear-gradient(135deg, #064e3b, #065f46);
+      border: 2px solid #10b981;
+      border-radius: 50px;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 0 24px rgba(16,185,129,.25);
+    }
+    .node-terminal .icon { font-size: 22px; }
+    .node-terminal .label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #6ee7b7;
+    }
+
+    /* ── DATA node ── */
+    .node-data {
+      background: linear-gradient(135deg, #1e3a5f, #1e40af22);
+      border: 2px solid #3b82f6;
+      box-shadow: 0 0 18px rgba(59,130,246,.2);
+    }
+    .node-data .icon { font-size: 20px; flex-shrink: 0; }
+    .node-data .label {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #93c5fd;
+    }
+    .node-data .sub {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    /* ── STEP node ── */
+    .node-step {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+    }
+    .node-step:hover { border-color: #10b981; }
+    .step-num {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0d9488, #0891b2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .step-body { flex: 1; }
+    .step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .step-detail {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+      font-family: 'Courier New', monospace;
+    }
+    .step-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .tag-input    { background: #1e3a5f; color: #7dd3fc; border: 1px solid #3b82f6; }
+    .tag-select   { background: #312e81; color: #c4b5fd; border: 1px solid #8b5cf6; }
+    .tag-textarea { background: #1a3b2a; color: #6ee7b7; border: 1px solid #10b981; }
+    .tag-loop     { background: #3b1c1c; color: #fca5a5; border: 1px solid #ef4444; }
+    .tag-tags     { background: #292a1a; color: #fef08a; border: 1px solid #eab308; }
+    .tag-check    { background: #1a2b3b; color: #7dd3fc; border: 1px solid #38bdf8; }
+    .tag-omit     { background: #431407; color: #fb923c; border: 1px solid #f97316; }
+
+    /* ── OMITTED node ── */
+    .node-omit {
+      background: #1a0a00;
+      border: 1.5px dashed #f97316;
+      opacity: .85;
+    }
+    .node-omit .step-title { color: #fb923c; }
+    .omit-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: #7c2d12;
+      color: #fed7aa;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── LOOP subcard ── */
+    .loop-card {
+      width: calc(100% - 40px);
+      margin: 6px 0 0 40px;
+      background: #0f1f2e;
+      border: 1px dashed #0ea5e9;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: #7dd3fc;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .loop-card .loop-title {
+      font-weight: 700;
+      color: #38bdf8;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    .loop-card .loop-item::before {
+      content: '↳ ';
+      color: #0ea5e9;
+    }
+
+    /* ── Section divider ── */
+    .section-label {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 4px;
+    }
+    .section-label span {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #475569;
+      white-space: nowrap;
+    }
+    .section-label::before, .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1e293b;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 50px;
+      padding: 20px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .legend-title {
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .leg-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">IETS &middot; Repositorio Institucional</div>
+  <h1>Flujograma: Autollenado del Formulario</h1>
+  <p>Script: <code>autollenar.js</code> generado por <code>generador_js.py</code> &nbsp;&middot;&nbsp; Ejecuci&oacute;n en DevTools (F12)</p>
+</div>
+
+<div class="flow" id="flow"></div>
+
+<div class="legend">
+  <div class="legend-title">Leyenda de tipos de campo</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div> Input de texto</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#8b5cf6"></div> Select (desplegable)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#10b981"></div> Textarea</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div> Bucle (loop)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#eab308"></div> Tags (Enter)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#38bdf8"></div> Checkbox</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#f97316"></div> Omitido</div>
+</div>
+
+<script>
+const steps = [
+  { type: 'terminal', icon: '&#x1F680;', label: 'INICIO: Ejecutar autollenar.js en DevTools (F12)' },
+  { type: 'data',
+    icon: '&#x1F4E6;',
+    label: 'Cargar datos JSON del documento',
+    sub: 'titulo &middot; tipo_documento &middot; idioma &middot; area_tematica &middot; tecnologia &middot; resumen_ejecutivo &middot; autores &middot; metodologia &middot; recomendaciones &middot; citas &middot; url_archivo' },
+
+  { type: 'section', label: 'Campos principales del formulario' },
+
+  { type: 'step', num: 1,  title: 'T&iacute;tulo del Documento',      detail: "input[name='title']",           tag: 'input',    tagLabel: 'Input' },
+  { type: 'step', num: 2,  title: 'Tipo de Documento',         detail: "select[name='type']",            tag: 'select',   tagLabel: 'Select' },
+  { type: 'step', num: 3,  title: 'Idioma',                    detail: "select[name='language']",        tag: 'select',   tagLabel: 'Select' },
+  { type: 'step', num: 4,  title: '&Aacute;rea Tem&aacute;tica',      detail: "select[name='area']",            tag: 'select',   tagLabel: 'Select' },
+  { type: 'step', num: 5,  title: 'Tecnolog&iacute;a',                detail: "input[name='technology']",       tag: 'input',    tagLabel: 'Input' },
+  { type: 'step', num: 6,  title: 'Resumen Ejecutivo',         detail: "textarea[name='abstract']",      tag: 'textarea', tagLabel: 'Textarea' },
+  { type: 'step', num: 7,  title: 'Autores',                   detail: "addTags() + tecla Enter",        tag: 'tags',     tagLabel: 'Tags' },
+
+  { type: 'section', label: 'Secciones din&aacute;micas (bucles)' },
+
+  { type: 'step', num: 8,  title: 'Metodolog&iacute;a',
+    detail: "Click 'Agregar Paso' &rarr; T&iacute;tulo + Descripci&oacute;n  &times;N pasos",
+    tag: 'loop', tagLabel: 'Bucle',
+    loop: ['Click bot&oacute;n "Agregar Paso"', 'Llenar t&iacute;tulo del paso', 'Llenar descripci&oacute;n del paso', 'Repetir por cada paso metodol&oacute;gico'] },
+
+  { type: 'step', num: 9,  title: 'Recomendaciones',
+    detail: "Click 'Agregar Recomendaci&oacute;n' &rarr; T&iacute;tulo, Desc., Fuerza, Evidencia  &times;N",
+    tag: 'loop', tagLabel: 'Bucle',
+    loop: ['Click bot&oacute;n "Agregar Recomendaci&oacute;n"', 'Llenar t&iacute;tulo', 'Llenar descripci&oacute;n', 'Seleccionar Fuerza (Fuerte/D&eacute;bil)', 'Seleccionar Evidencia (Alta/Moderada)'] },
+
+  { type: 'omit', num: 10, title: 'An&aacute;lisis Econ&oacute;mico', detail: 'Intencionalmente omitido &mdash; secci&oacute;n saltada' },
+
+  { type: 'section', label: 'Configuraci&oacute;n y metadatos' },
+
+  { type: 'step', num: 11, title: 'Fecha de Publicaci&oacute;n',      detail: "input[name='publicationDate'] | input[type='date']", tag: 'input',  tagLabel: 'Input' },
+  { type: 'step', num: 12, title: 'Nivel de Acceso',           detail: "select[name='accessLevel']",     tag: 'select',   tagLabel: 'Select' },
+  { type: 'step', num: 13, title: 'Checkboxes',                detail: "isPeerReviewed + isRecommended", tag: 'check',    tagLabel: 'Checkbox' },
+  { type: 'step', num: 14, title: 'P&aacute;ginas',                   detail: "input[name='pages']",            tag: 'input',    tagLabel: 'Input' },
+  { type: 'step', num: 15, title: 'DOI',                       detail: "input[name='doi']",              tag: 'input',    tagLabel: 'Input' },
+  { type: 'step', num: 16, title: 'Etiquetas',                 detail: "addTags() + tecla Enter",        tag: 'tags',     tagLabel: 'Tags' },
+
+  { type: 'section', label: 'Secciones adicionales' },
+
+  { type: 'step', num: 17, title: 'Contacto Autores',
+    detail: "findButtonNear('Contacto Autores') &rarr; Nombre, Rol, Email  &times;N",
+    tag: 'loop', tagLabel: 'Bucle',
+    loop: ['Click bot&oacute;n "Agregar Contacto"', 'Llenar Nombre', 'Llenar Rol/Cargo', 'Llenar Email'] },
+
+  { type: 'step', num: 18, title: 'Citas Bibliogr&aacute;ficas',      detail: "textarea APA + textarea Vancouver", tag: 'textarea', tagLabel: 'Textarea' },
+
+  { type: 'step', num: 19, title: 'Documentos Relacionados',
+    detail: "findButtonNear('Documentos Relacionados') &rarr; T&iacute;tulo, Categor&iacute;a, URL  &times;N",
+    tag: 'loop', tagLabel: 'Bucle',
+    loop: ['Click bot&oacute;n "Agregar Documento"', 'Llenar T&iacute;tulo del documento', 'Llenar Categor&iacute;a', 'Llenar URL'] },
+
+  { type: 'step', num: 20, title: 'URL Archivo Principal',     detail: "input[name='fileUrl']",          tag: 'input',    tagLabel: 'Input' },
+
+  { type: 'terminal', icon: '&#x2705;', label: 'FIN: Formulario diligenciado al 100% &mdash; Alert de confirmaci&oacute;n' },
+];
+
+const tagClass = {
+  input: 'tag-input', select: 'tag-select', textarea: 'tag-textarea',
+  loop: 'tag-loop', tags: 'tag-tags', check: 'tag-check', omit: 'tag-omit'
+};
+
+function buildNode(s) {
+  if (s.type === 'section') {
+    return `<div class="section-label"><span>${s.label}</span></div>`;
+  }
+  if (s.type === 'terminal') {
+    return `<div class="node node-terminal">
+      <span class="icon">${s.icon}</span>
+      <span class="label">${s.label}</span>
+    </div>`;
+  }
+  if (s.type === 'data') {
+    return `<div class="node node-data">
+      <span class="icon">${s.icon}</span>
+      <div>
+        <div class="label">${s.label}</div>
+        <div class="sub">${s.sub}</div>
+      </div>
+    </div>`;
+  }
+  if (s.type === 'omit') {
+    return `<div class="node node-step node-omit">
+      <div class="step-num" style="background:linear-gradient(135deg,#7c2d12,#9a3412)">${s.num}</div>
+      <div class="step-body">
+        <div class="step-title">&#x26A0;&#xFE0F; ${s.title}</div>
+        <div class="step-detail">${s.detail}</div>
+      </div>
+      <span class="omit-badge">OMITIDO</span>
+    </div>`;
+  }
+  const loopHtml = s.loop ? `
+    <div class="loop-card">
+      <div class="loop-title">&#x1F501; Bucle por cada elemento</div>
+      ${s.loop.map(l => `<div class="loop-item">${l}</div>`).join('')}
+    </div>` : '';
+
+  return `<div class="node node-step">
+    <div class="step-num">${s.num}</div>
+    <div class="step-body">
+      <div class="step-title">${s.title}</div>
+      <div class="step-detail">${s.detail}</div>
+    </div>
+    <span class="step-tag ${tagClass[s.tag]}">${s.tagLabel}</span>
+  </div>${loopHtml}`;
+}
+
+const flow = document.getElementById('flow');
+steps.forEach((s, i) => {
+  flow.insertAdjacentHTML('beforeend', buildNode(s));
+  const isLast = i === steps.length - 1;
+  if (!isLast && s.type !== 'section') {
+    const nextIsSection = steps[i + 1].type === 'section';
+    flow.insertAdjacentHTML('beforeend', `<div class="arrow${nextIsSection ? ' short' : ''}"></div>`);
+  }
+});
+</script>
+</body>
+</html>

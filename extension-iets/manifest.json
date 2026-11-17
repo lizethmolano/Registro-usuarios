@@ -1,0 +1,43 @@
+{
+    "manifest_version": 3,
+    "name": "Autollenador Repositorio IETS",
+    "version": "3.0",
+    "description": "Saneamiento Masivo y Autollenado inteligente para el Repositorio IETS (2011-2026)",
+    "icons": {
+        "48": "icon.png"
+    },
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "https://repositorio.iets.org.co/*",
+        "https://back-repositorioiets.onrender.com/*",
+        "https://api.minimax.io/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://repositorio.iets.org.co/*"
+            ],
+            "js": [
+                "pdf.min.js",
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "pdf.worker.js",
+                "pdf.worker.min.js",
+                "icon.png",
+                "patch_manifest.json"
+            ],
+            "matches": [
+                "https://repositorio.iets.org.co/*"
+            ]
+        }
+    ]
+}
+

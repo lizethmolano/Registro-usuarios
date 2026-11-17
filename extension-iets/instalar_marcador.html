@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Instalador de Botón - Autollenar IETS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            border: 1px solid #e2e8f0;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #0369a1;
+        }
+        p {
+            font-size: 16px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+        .btn-marcador {
+            display: inline-block;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 16px 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.39);
+            cursor: grab;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .btn-marcador:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
+        }
+        .instruction {
+            background: #eff6ff;
+            border: 1px dashed #3b82f6;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            font-size: 15px;
+            color: #1e40af;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Instalación con 1 solo Arrastre</h1>
+        <p>Para no tener que escribir código ni abrir menús, simplemente arrastra este botón al panel de marcadores que tienes abierto a la derecha:</p>
+        
+        <a class="btn-marcador" href="javascript:(async()=>{try{const t=await navigator.clipboard.readText();if(t&&t.includes('data')){eval(t);}else{alert('ℹ Primero arrastra tu PDF al icono Registrar PDF en IETS.');}}catch(e){alert('⚠ Haz clic en Permitir cuando Chrome te pida acceso al portapapeles.');}})()">
+            ⚡ Autollenar IETS
+        </a>
+
+        <div class="instruction">
+            👉 <b>Arrastra el botón azul</b> con el mouse hacia el panel de la derecha y <b>suéltalo sobre "Barra de marcadores (0)"</b>.
+        </div>
+    </div>
+</body>
+</html>
